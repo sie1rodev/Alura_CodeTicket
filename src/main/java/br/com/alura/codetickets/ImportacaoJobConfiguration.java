@@ -2,6 +2,7 @@ package br.com.alura.codetickets;
 
 import javax.sql.DataSource;
 
+import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
@@ -13,7 +14,6 @@ import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourc
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.batch.BatchProperties.Job;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
@@ -47,9 +47,11 @@ public class ImportacaoJobConfiguration {
         return new FlatFileItemReaderBuilder<Importacao>()
                 .name("leitura-csv")
                 .resource(new FileSystemResource("files/dados.csv"))
+                .comments("--")
                 .delimited()
-                .names("cpf", "cliente", "nascimento", "evento", "data", "tipoIngresso ", "valor")
-                .targetType(Importacao.class)
+                .delimiter(";")
+                .names("cpf", "cliente", "nascimento", "evento", "data", "tipoIngresso", "valor")
+                .fieldSetMapper(new ImportacaoMapper())
                 .build();
     }
 
@@ -58,8 +60,8 @@ public class ImportacaoJobConfiguration {
             return new JdbcBatchItemWriterBuilder<Importacao>()
                     .dataSource(dataSource)
                     .sql(
-                            "INSERT INTO importacao (cpf, cliente, evento, data, tipo_ingresso, valor, hora_importacao) VALUES" +
-                                    " (:cpf, :cliente, :evento, :data, :tipoIngresso, :valor, :horaImportacao)"
+                            "INSERT INTO importacao (cpf, cliente, nascimento, evento, data, tipo_ingresso, valor, hora_importacao) VALUES" +
+                                    " (:cpf, :cliente, :nascimento, :evento, :data, :tipoIngresso, :valor, :horaImportacao)"
                     )
                     .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
                     .build();
